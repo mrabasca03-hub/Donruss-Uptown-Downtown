@@ -24,21 +24,45 @@ Derived at render time (not stored): `profit = psa10 - raw - fee`,
 `profitPct`, `cardType` (`"Base"` if parallel is empty/"Base", else `"Variant"`).
 
 ## Price history / change tracking
-Each card optionally has a `history` array: `[{ date: "YYYY-MM-DD", raw, psa9, psa10 }, ...]`,
-sorted ascending by date. A snapshot of the card's current raw/psa9/psa10 is upserted under
-today's date automatically every time the card is saved (add or edit) — if a snapshot for today
-already exists it's overwritten, so multiple edits in one day don't create duplicate dates.
+Each card has a `history` array: `[{ date: "YYYY-MM-DD", raw, psa9, psa10 }, ...]`, sorted
+ascending by date. `ensureHistorySeed()` runs on every load (and after "Reset to seed data") and
+stamps a baseline snapshot dated today onto any card that doesn't have one yet — this is what
+makes tracking start immediately for every card, not just ones a user happens to open and save.
+Saving a card (add or edit) separately upserts today's date with the new values, overwriting
+same-day entries rather than duplicating them.
 
 The table has a "Δ vs" period selector (7 / 30 / 60 / 365 / 730 days, persisted to localStorage
-like the fee). For the selected period, each price cell (Raw / PSA 9 / PSA 10) shows a small
-colored delta beneath the value: the % change from the most recent history entry dated on or
-before `today - period` to the current price. If no history entry is that old yet, it shows "—".
+like the fee) and three dedicated, sortable columns — Δ Raw / Δ PSA 9 / Δ PSA 10 — whose headers
+show the active period (e.g. "Δ Raw (30D)"). For the selected period, `valueAtOrBefore()` finds
+the most recent history entry dated on or before `today - period` and compares it to the current
+price; if no entry is that old yet, the cell shows "—". Critically, this lookup does **not**
+require an exact-day match — it just wants the closest known point at or before the cutoff — so
+sparse, irregular history (e.g. only month-end snapshots) works fine and is the practical way to
+backfill real change data instead of needing a price logged for every single day.
 
-Because there's no live feed, meaningful change tracking depends on backfilling past prices, not
-just waiting for time to pass. The Edit-card modal has a "Price history" section (`+ Add price
-point`) where dated raw/psa9/psa10 entries can be added or removed manually — e.g. pulled from
-SportsCardsPro's own historical price chart for that card. This is the main way to get 30/60/365/730-day
-deltas populated before that much real time has elapsed.
+Because there's no live feed, meaningful non-"—" change data depends on backfilling past prices,
+not just waiting for real time to pass from the auto-seeded baseline. The Edit-card modal has a
+"Price history" section (`+ Add price point`) where dated raw/psa9/psa10 entries can be added or
+removed manually — e.g. pulled from SportsCardsPro's own historical price chart for that card.
+Sourcing/verifying real historical prices per card is manual effort (same "don't guess" caution
+as images below), so backfilling is best done in trial batches rather than all cards at once.
+
+Automated fetching of SportsCardsPro (or PSA/Sports Card Investor/Card Ladder) is not viable from
+Claude Code in this environment — WebFetch gets 403s from all of them, the sandboxed Browser pane
+is policy-blocked on these domains, and eBay search results only sparsely/inconsistently surface
+real sale prices. The user's own browser is unaffected by these blocks and is the only reliable
+way to pull real prices; Claude formats whatever values the user hands back.
+
+Column order in the table is: Raw, PSA 9, PSA 10, Profit $, Profit %, then the three Δ (change)
+columns, then Gem Rate / Avg Grade — profit comes before change so the "is this worth attention"
+metric reads left-to-right before the "why/when" context.
+
+Each card's name has a small "↗" link to its best-effort SportsCardsPro page, built by
+`sportsCardsProUrl()` from a URL pattern verified against ~30 real card pages (year/set slug,
+parallel slug, player-name slug, card number). It is **not guaranteed correct** for every card —
+slugs for uncommon parallels or name formats (suffixes, initials) are inferred, not individually
+verified, so some links may 404. That's an acceptable, low-stakes failure mode (worst case: use
+the site's own search) — unlike price data, a wrong link isn't a data-integrity problem.
 
 ## Thumbnails
 Every card renders a generated placeholder thumbnail (inline SVG, no external
@@ -80,8 +104,9 @@ so raw-vs-premium profit is directly comparable.
 ## UI / feature summary
 - Vanilla HTML/CSS/JS, single file, no build step, no dependencies beyond
   Google Fonts (Fraunces, JetBrains Mono, Inter).
-- Dark theme; gold accent (#C9A227) for Uptown, crimson (#C74B4B) for
-  Downtown, used in badges.
+- Dark navy theme (`--bg` #0A0E1A); white accent for Uptown, blue (#4C7EFF)
+  accent for Downtown, used in badges and generated thumbnails. Green/red
+  (profit/loss) are unrelated semantic colors and unchanged by this palette.
 - Sortable columns (click header), filters for Set (All/Uptown/Downtown) and
   Type (All/Base/Variant), editable grading-fee input (default $25).
 - Add/Edit modal for individual cards; "Reset to seed data" restores

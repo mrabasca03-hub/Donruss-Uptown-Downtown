@@ -8,16 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0E0E10;
-    --surface: #17171A;
-    --border: #2A2A2E;
-    --border-soft: #1D1D20;
-    --text: #EDEAE2;
-    --text-dim: #8B93A3;
-    --gold: #C9A227;
-    --gold-bright: #E4C557;
-    --crimson: #C74B4B;
-    --crimson-bright: #E88A8A;
+    --bg: #0A0E1A;
+    --surface: #121A2E;
+    --border: #2A3652;
+    --border-soft: #1C2439;
+    --text: #F2F5FB;
+    --text-dim: #8B96B4;
+    --gold: #FFFFFF;
+    --gold-bright: #FFFFFF;
+    --crimson: #4C7EFF;
+    --crimson-bright: #8FB0FF;
     --green: #4E9A5D;
     --red: #C1443C;
   }
@@ -52,7 +52,7 @@
   .filter-btn.active { background: var(--gold); color: var(--bg); font-weight: 700; }
   .reset-btn { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border);
                color: var(--text-dim); border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
-  .reset-btn:hover { color: var(--text); border-color: #3a3a3f; }
+  .reset-btn:hover { color: var(--text); border-color: #3A4666; }
 
   .table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: auto; max-height: 72vh; }
   table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
@@ -62,7 +62,7 @@
   thead th.no-sort { cursor: default; }
   thead th.rank-col { padding-left: 16px; cursor: default; }
   tbody tr { border-bottom: 1px solid var(--border-soft); cursor: pointer; }
-  tbody tr:hover { background: #1B1B1E; }
+  tbody tr:hover { background: #182338; }
   td { padding: 12px; }
   td.rank { padding: 12px 10px 12px 16px; color: var(--gold); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
   td.thumb-cell { padding: 8px 4px 8px 8px; width: 40px; }
@@ -72,12 +72,14 @@
   .thumb-gen { display: block; border-radius: 3px; }
   .card-name { font-weight: 600; font-size: 14px; }
   .card-meta { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+  .price-link { color: var(--text-dim); text-decoration: none; font-size: 12px; margin-left: 6px; vertical-align: 1px; }
+  .price-link:hover { color: var(--text); }
   td.num { font-family: 'JetBrains Mono', monospace; font-size: 13px; white-space: nowrap; }
   .badge { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); }
   .badge-base { background: rgba(139,147,163,0.15); color: var(--text-dim); }
   .badge-variant { background: rgba(139,147,163,0.15); color: #C9C9C9; }
-  .badge-uptown { background: rgba(201,162,39,0.15); color: var(--gold-bright); border-color: rgba(201,162,39,0.4); }
-  .badge-downtown { background: rgba(199,75,75,0.15); color: var(--crimson-bright); border-color: rgba(199,75,75,0.4); }
+  .badge-uptown { background: rgba(255,255,255,0.15); color: var(--gold-bright); border-color: rgba(255,255,255,0.4); }
+  .badge-downtown { background: rgba(76,126,255,0.15); color: var(--crimson-bright); border-color: rgba(76,126,255,0.4); }
   .profit-pos { color: var(--green); font-weight: 600; }
   .profit-neg { color: var(--red); font-weight: 600; }
   .profit-na { color: var(--text-dim); }
@@ -87,17 +89,12 @@
   .empty-row td { padding: 40px 16px; text-align: center; color: var(--text-dim); }
   .chevron { margin-left: 3px; font-size: 10px; }
 
-  .delta { font-size: 11px; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
-  .delta-pos { color: var(--green); }
-  .delta-neg { color: var(--red); }
-  .delta-na { color: var(--text-dim); }
-
   .history-section { margin-top: 4px; }
   .history-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .history-head label { margin: 0; }
   .history-add-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 5px;
                       padding: 4px 8px; font-size: 11.5px; cursor: pointer; }
-  .history-add-btn:hover { color: var(--text); border-color: #3a3a3f; }
+  .history-add-btn:hover { color: var(--text); border-color: #3A4666; }
   .history-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr auto; gap: 6px; margin-bottom: 6px; align-items: center; }
   .history-row input { background: var(--bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text);
                         padding: 6px 7px; font-size: 12.5px; font-family: 'JetBrains Mono', monospace; width: 100%; }
@@ -471,13 +468,6 @@ function changePct(current, past) {
   if (current === null || past === null || past === 0) return null;
   return ((current - past) / Math.abs(past)) * 100;
 }
-function deltaHtml(pct) {
-  if (pct === null || pct === undefined || isNaN(pct)) return `<div class="delta delta-na">—</div>`;
-  const cls = pct >= 0 ? "delta-pos" : "delta-neg";
-  const arrow = pct >= 0 ? "▲" : "▼";
-  return `<div class="delta ${cls}">${arrow} ${Math.abs(pct).toFixed(1)}%</div>`;
-}
-
 function initials(name) {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
   if (!parts.length) return "?";
@@ -493,10 +483,39 @@ function parallelTag(parallel) {
   if (/vinyl/i.test(p)) return "VINYL";
   return p.replace(/\s*\/\d+$/, "").slice(0, 5).toUpperCase();
 }
+// Best-effort deep link to this card's SportsCardsPro price-history page, built
+// from its known URL pattern (verified against ~30 real card pages, but slugs
+// for less-common names/parallels are inferred, not confirmed — the page may
+// 404, in which case searching the player's name on the site is the fallback).
+function slugifyName(name) {
+  return (name || "").toLowerCase().replace(/[.']/g, "").trim().replace(/\s+/g, "-");
+}
+function parallelSlug(parallel) {
+  const p = (parallel || "Base").trim().toLowerCase();
+  if (p === "" || p === "base") return null;
+  if (p.startsWith("white pandora")) return "white-pandora";
+  if (p.startsWith("black pandora")) return "black-pandora";
+  if (p.startsWith("gold")) return "gold";
+  return slugifyName(parallel.replace(/\/\d+\s*$/, ""));
+}
+function setSlug(set, year) {
+  const s = (set || "").trim().toLowerCase();
+  if (s === "uptown") return year === "2024" ? "uptowns" : "uptown";
+  return "downtown";
+}
+function sportsCardsProUrl(c) {
+  if (!c.player || !c.set || !c.year) return null;
+  const parts = [slugifyName(c.player)];
+  const pSlug = parallelSlug(c.parallel);
+  if (pSlug) parts.push(pSlug);
+  if (c.cardNumber) parts.push(slugifyName(String(c.cardNumber)));
+  return `https://www.sportscardspro.com/game/football-cards-${c.year}-panini-donruss-optic-${setSlug(c.set, c.year)}/${parts.join("-")}`;
+}
+
 function genThumbSvg(c) {
   const isDown = c.set === "Downtown";
-  const fill = isDown ? "rgba(199,75,75,0.15)" : "rgba(201,162,39,0.15)";
-  const stroke = isDown ? "rgba(199,75,75,0.4)" : "rgba(201,162,39,0.4)";
+  const fill = isDown ? "rgba(76,126,255,0.15)" : "rgba(255,255,255,0.15)";
+  const stroke = isDown ? "rgba(76,126,255,0.4)" : "rgba(255,255,255,0.4)";
   const textColor = isDown ? "var(--crimson-bright)" : "var(--gold-bright)";
   const init = esc(initials(c.player));
   const tag = esc(parallelTag(c.parallel));
@@ -527,6 +546,8 @@ function enrich(list) {
   });
 }
 
+const PERIOD_LABELS = { 7: "7D", 30: "30D", 60: "60D", 365: "1Y", 730: "2Y" };
+
 const COLUMNS = [
   { key: "player", label: "Card", sortable: false },
   { key: "set", label: "Set" },
@@ -536,6 +557,9 @@ const COLUMNS = [
   { key: "psa10", label: "PSA 10" },
   { key: "profit", label: "Profit $" },
   { key: "profitPct", label: "Profit %" },
+  { key: "rawChangePct", label: "Δ Raw", isDelta: true },
+  { key: "psa9ChangePct", label: "Δ PSA 9", isDelta: true, hideMobile: true },
+  { key: "psa10ChangePct", label: "Δ PSA 10", isDelta: true },
   { key: "gemRate", label: "Gem Rate", hideMobile: true },
   { key: "avgGrade", label: "Avg Grade", hideMobile: true },
 ];
@@ -579,7 +603,7 @@ function render() {
     </div>
     <div class="stat">
       <div class="stat-label">Avg. profit (after fee)</div>
-      <div class="stat-value" style="color:${avgProfit === null ? '#EDEAE2' : (avgProfit >= 0 ? 'var(--green)' : 'var(--red)')}">${money(avgProfit)}</div>
+      <div class="stat-value" style="color:${avgProfit === null ? '#F2F5FB' : (avgProfit >= 0 ? 'var(--green)' : 'var(--red)')}">${money(avgProfit)}</div>
     </div>
     <div class="stat">
       <div class="stat-label">Top gainer</div>
@@ -598,7 +622,8 @@ function render() {
   COLUMNS.forEach((col) => {
     const arrow = sortKey === col.key ? `<span class="chevron">${sortDir === "desc" ? "▼" : "▲"}</span>` : "";
     const cls = (col.sortable === false ? "no-sort" : "") + (col.hideMobile ? " hide-mobile" : "");
-    headHtml += `<th class="${cls}" data-key="${col.key}" data-sortable="${col.sortable !== false}">${col.label}${arrow}</th>`;
+    const label = col.isDelta ? `${col.label} (${PERIOD_LABELS[period]})` : col.label;
+    headHtml += `<th class="${cls}" data-key="${col.key}" data-sortable="${col.sortable !== false}">${label}${arrow}</th>`;
   });
   headHtml += `<th class="no-sort"></th>`;
   headRow.innerHTML = headHtml;
@@ -609,7 +634,7 @@ function render() {
   // Body rows
   const tbody = document.getElementById("tableBody");
   if (sorted.length === 0) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="13">No cards match this filter.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="16">No cards match this filter.</td></tr>`;
     return;
   }
   let rowsHtml = "";
@@ -619,24 +644,33 @@ function render() {
     const typeBadgeClass = c.cardType === "Base" ? "badge-base" : "badge-variant";
     const profitClass = c.profit === null ? "profit-na" : (c.profit >= 0 ? "profit-pos" : "profit-neg");
     const profitPctClass = c.profitPct === null ? "profit-na" : (c.profitPct >= 0 ? "profit-pos" : "profit-neg");
+    const deltaClass = (pct) => (pct === null || pct === undefined || isNaN(pct)) ? "profit-na" : (pct >= 0 ? "profit-pos" : "profit-neg");
+    const deltaText = (pct) => (pct === null || pct === undefined || isNaN(pct)) ? "—" : ((pct >= 0 ? "▲ " : "▼ ") + Math.abs(pct).toFixed(1) + "%");
     const thumbHtml = c.image
       ? `<div class="thumb-wrap">${genThumbSvg(c)}<img src="${esc(c.image)}" class="thumb thumb-overlay" alt="" onerror="this.remove()"></div>`
       : genThumbSvg(c);
+    const priceUrl = sportsCardsProUrl(c);
+    const priceLinkHtml = priceUrl
+      ? `<a href="${esc(priceUrl)}" class="price-link" target="_blank" rel="noopener noreferrer" title="View price history on SportsCardsPro (best-effort link)">↗</a>`
+      : "";
     rowsHtml += `
       <tr data-id="${esc(c.id)}">
         <td class="rank">${rank}</td>
         <td class="thumb-cell hide-mobile">${thumbHtml}</td>
         <td>
-          <div class="card-name">${esc(c.player)}</div>
+          <div class="card-name">${esc(c.player)}${priceLinkHtml}</div>
           <div class="card-meta">${esc(c.year)} · ${esc(c.parallel || "Base")}${c.cardNumber ? " · #" + esc(c.cardNumber) : ""}</div>
         </td>
         <td><span class="badge ${setBadgeClass}">${esc(c.set)}</span></td>
         <td><span class="badge ${typeBadgeClass}">${esc(c.cardType)}</span></td>
-        <td class="num">${money(c.raw)}${deltaHtml(c.rawChangePct)}</td>
-        <td class="num hide-mobile">${money(c.psa9)}${deltaHtml(c.psa9ChangePct)}</td>
-        <td class="num">${money(c.psa10)}${deltaHtml(c.psa10ChangePct)}</td>
+        <td class="num">${money(c.raw)}</td>
+        <td class="num hide-mobile">${money(c.psa9)}</td>
+        <td class="num">${money(c.psa10)}</td>
         <td class="num ${profitClass}">${money(c.profit)}</td>
         <td class="num ${profitPctClass}">${pctStr(c.profitPct)}</td>
+        <td class="num ${deltaClass(c.rawChangePct)}">${deltaText(c.rawChangePct)}</td>
+        <td class="num hide-mobile ${deltaClass(c.psa9ChangePct)}">${deltaText(c.psa9ChangePct)}</td>
+        <td class="num ${deltaClass(c.psa10ChangePct)}">${deltaText(c.psa10ChangePct)}</td>
         <td class="num hide-mobile">${c.gemRate !== null ? c.gemRate.toFixed(0) + "%" : "—"}</td>
         <td class="num hide-mobile">${c.avgGrade !== null ? c.avgGrade.toFixed(2) : "—"}</td>
         <td class="remove-cell"><button class="remove-btn" data-remove="${esc(c.id)}" title="Remove card">✕</button></td>
@@ -647,7 +681,7 @@ function render() {
 
   tbody.querySelectorAll("tr[data-id]").forEach((tr) => {
     tr.addEventListener("click", (e) => {
-      if (e.target.closest("[data-remove]")) return;
+      if (e.target.closest("[data-remove]") || e.target.closest("a")) return;
       openEdit(tr.getAttribute("data-id"));
     });
   });
@@ -678,8 +712,25 @@ function removeCard(id) {
 
 function resetToSeed() {
   cards = SEED_CARDS.slice();
+  ensureHistorySeed();
   saveCards();
   render();
+}
+
+// A card with zero history entries can never show a change, even after the
+// selected period has genuinely elapsed, because there's no earlier price to
+// compare against. Stamp a baseline "today" snapshot the first time a card is
+// ever seen so real tracking starts immediately, without requiring the user
+// to open and save every card by hand first.
+function ensureHistorySeed() {
+  const today = todayISO();
+  let changed = false;
+  cards = cards.map((c) => {
+    if (c.history && c.history.length) return c;
+    changed = true;
+    return Object.assign({}, c, { history: [{ date: today, raw: c.raw, psa9: c.psa9, psa10: c.psa10 }] });
+  });
+  if (changed) saveCards();
 }
 
 // ---------- Modal ----------
@@ -854,6 +905,7 @@ document.getElementById("periodFilterGroup").addEventListener("click", (e) => {
 
 // ---------- Init ----------
 loadState();
+ensureHistorySeed();
 document.getElementById("feeInput").value = fee;
 document.querySelectorAll("#periodFilterGroup .filter-btn").forEach((b) => {
   b.classList.toggle("active", Number(b.getAttribute("data-period")) === period);
