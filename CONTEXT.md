@@ -67,8 +67,9 @@ the site's own search) — unlike price data, a wrong link isn't a data-integrit
 ## Thumbnails
 Every card renders a generated placeholder thumbnail (inline SVG, no external
 requests): player initials + a short parallel tag (BASE/GOLD/W.PAN/B.PAN/…),
-colored gold for Uptown and crimson for Downtown to match the existing badge
-palette. Generated at render time from `player`/`set`/`parallel` — nothing is
+colored white for Uptown and blue for Downtown to match the badge palette
+(see the navy theme in "UI / feature summary"). Generated at render time from
+`player`/`set`/`parallel` — nothing is
 stored, so it applies automatically to every card, including new ones. If a
 card has a manually verified `image` URL, that photo overlays on top of the
 placeholder (`onerror` falls back to removing the broken image and exposing
@@ -111,19 +112,75 @@ so raw-vs-premium profit is directly comparable.
   Type (All/Base/Variant), editable grading-fee input (default $25).
 - Add/Edit modal for individual cards; "Reset to seed data" restores
   `SEED_CARDS` and wipes localStorage edits.
-- "Δ vs" period selector (7D/30D/60D/1Y/2Y) shows each price's % change under
-  Raw/PSA 9/PSA 10; per-card price history is editable in the Add/Edit modal
+- "Δ vs" period selector (7D/30D/60D/1Y/2Y) drives three dedicated Δ Raw / Δ
+  PSA 9 / Δ PSA 10 columns (header shows the active period); per-card price
+  history is editable in the Add/Edit modal (see "Price history / change
+  tracking" above).
+- Each card name has a best-effort "↗" link out to its SportsCardsPro page
   (see "Price history / change tracking" above).
 - Data persists in the visiting browser's localStorage — this is
   per-browser, not synced across devices, and not visible to me (Claude in
   chat) unless the user tells me what they changed.
 
 ## Ongoing workflow
-1. User asks Claude (in claude.ai chat) to pull fresh prices for specific
-   cards/sets from SportsCardsPro.
-2. Claude (chat) returns updated values or a fully regenerated `index.html`.
-3. User hands that to Claude Code in this repo with an instruction like
-   "update index.html with these values, commit, and push."
+1. User asks Claude Code (in this repo) to pull/update prices, add features,
+   or otherwise change `index.html` and/or this file.
+2. For anything UI-affecting, Claude Code should actually run the page (see
+   "Local testing" below) rather than just editing and assuming it works.
+3. Claude Code commits and pushes to `main` only when the user explicitly
+   asks — see git/session conventions, not repeated here.
 4. GitHub Pages auto-redeploys from the `main` branch, root folder.
+
+For price data specifically: the user is the only one who can reach
+SportsCardsPro (see "not viable from Claude Code" note above), so the loop is
+user pulls values from the site → hands them to Claude Code in whatever form
+is convenient (pasted numbers, a filled-in CSV) → Claude Code writes them
+into `SEED_CARDS` / a card's `history` and commits.
+
+### Full-refresh recipe (proven working 2026-08-09)
+When claude.ai chat (not Claude Code) has real browsing access to
+SportsCardsPro and Claude Code doesn't (see the access-blocked note above),
+route a full price refresh through it:
+1. Claude Code exports one reference CSV per set+year batch (`id,player,
+   parallel,card_number,year,set` — matches how the original data was
+   pulled) and a copy-paste prompt instructing claude.ai chat to look up
+   each card's current Raw/PSA 9/PSA 10 on the batch's SportsCardsPro
+   console URL and reply with `id,raw,psa9,psa10` only.
+2. User runs the prompt once per batch in claude.ai chat, sends the
+   resulting CSVs back.
+3. Claude Code merges by `id` (not name — avoids any Base/parallel mismatch)
+   against the live `SEED_CARDS`, archives each card's **pre-refresh**
+   raw/psa9/psa10 as a `history` entry dated 7 days back before overwriting
+   with the new values — this is what makes the Δ (7D) column show a real,
+   immediate change instead of "—" the moment the refresh lands, without
+   waiting a week. Only cards with an actual price change end up with a
+   nonzero delta; identical old/new values are expected for cards with no
+   new sales and just show 0.0%.
+4. Verify (see "Local testing"): card count still 108, spot-check a couple
+   of known-changed cards' new values + delta math, no console errors.
+
+This exact recipe refreshed all 108 cards on 2026-08-09 (5 genuine price
+moves: dt-35, dt-37, dt-39, dt-40, dt-43, all Downtown 2025 Base cards; the
+rest were unchanged since the prior pull, which is expected, not a bug).
+
+**Separately still open as of 2026-08-09:** a 25-card trial batch (highest-
+profit cards) was sent to the user as a fill-in CSV for *historical*
+month-end checkpoints (2026-06-30 and 2026-07-31, to populate 30D/60D
+change specifically) — independent of the 7-day refresh above. If/when the
+user returns it, merge into the matching cards' `history` arrays the same
+way (don't duplicate the auto-seeded/refresh-seeded entries already there).
+
+## Local testing
+This machine has no Python or Node in PATH, so `preview_start` can't launch
+a normal dev server, and opening `index.html` via `file://` in the sandboxed
+Browser pane renders a static snapshot only (no JS executes). What works:
+spin up a minimal PowerShell `HttpListener` static file server (inline
+script, no dependencies) on a local port, write a `.claude/launch.json` in
+the **Claude Code working directory** (not this repo) with a `url`-only
+config pointing at `http://localhost:<port>` (attach mode, no
+runtimeExecutable), then `preview_start` with that config name. `localhost`
+URLs are otherwise blocked from direct `navigate` calls — going through
+`preview_start`'s attach mode is what allows it. Stop the PowerShell process
+and delete the launch.json when done so it doesn't linger between sessions.
 
 Live site: https://mrabasca03-hub.github.io/Donruss-Uptown-Downtown/
