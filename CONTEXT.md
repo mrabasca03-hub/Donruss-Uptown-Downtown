@@ -40,6 +40,17 @@ point`) where dated raw/psa9/psa10 entries can be added or removed manually — 
 SportsCardsPro's own historical price chart for that card. This is the main way to get 30/60/365/730-day
 deltas populated before that much real time has elapsed.
 
+## Thumbnails
+Every card renders a generated placeholder thumbnail (inline SVG, no external
+requests): player initials + a short parallel tag (BASE/GOLD/W.PAN/B.PAN/…),
+colored gold for Uptown and crimson for Downtown to match the existing badge
+palette. Generated at render time from `player`/`set`/`parallel` — nothing is
+stored, so it applies automatically to every card, including new ones. If a
+card has a manually verified `image` URL, that photo overlays on top of the
+placeholder (`onerror` falls back to removing the broken image and exposing
+the placeholder again). This exists specifically so no one has to source or
+verify 100+ individual card photos to get thumbnails.
+
 ## Data source & methodology
 All prices sourced from **SportsCardsPro** (sportscardspro.com), which
 aggregates completed eBay/marketplace sales through a proprietary,
@@ -60,10 +71,11 @@ so raw-vs-premium profit is directly comparable.
   intentionally, not a bug.
 - `gemRate` / `avgGrade` require manually checking PSA's population report
   (not fetchable automatically) — all currently `null`.
-- `image` fields are intentionally blank on seed data — thumbnails were not
-  bulk-added because verifying the correct photo per card/parallel from
-  scraped data risked mismatches. Only add an image URL when a specific one
-  has been manually verified.
+- `image` fields are intentionally blank on seed data — real photo thumbnails
+  were not bulk-added because verifying the correct photo per card/parallel
+  from scraped data risked mismatches. Only add an image URL when a specific
+  one has been manually verified; the generated placeholder (see below)
+  covers the rest.
 
 ## UI / feature summary
 - Vanilla HTML/CSS/JS, single file, no build step, no dependencies beyond
