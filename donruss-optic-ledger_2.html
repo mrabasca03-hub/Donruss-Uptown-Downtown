@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uptown &amp; Downtown Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0E10;
+    --surface: #17171A;
+    --border: #2A2A2E;
+    --border-soft: #1D1D20;
+    --text: #EDEAE2;
+    --text-dim: #8B93A3;
+    --gold: #C9A227;
+    --gold-bright: #E4C557;
+    --crimson: #C74B4B;
+    --crimson-bright: #E88A8A;
+    --green: #4E9A5D;
+    --red: #C1443C;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; padding: 28px 20px 60px; }
+  .wrap { max-width: 1160px; margin: 0 auto; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;
+           border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: var(--gold); margin-bottom: 8px; }
+  h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--text-dim); font-size: 14.5px; margin-top: 8px; max-width: 560px; }
+  .add-btn { display: flex; align-items: center; gap: 8px; background: var(--gold); color: var(--bg); border: none;
+             border-radius: 6px; padding: 10px 16px; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .add-btn:hover { filter: brightness(1.08); }
+
+  .stat-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px;
+              background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+  .stat { background: var(--surface); padding: 16px 18px; }
+  .stat-label { font-size: 11.5px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+  .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 21px; font-weight: 700; margin-top: 6px; }
+  .stat-sub { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  .fee-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+  .fee-label { font-size: 12.5px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+  .fee-input { width: 70px; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; color: var(--text);
+               font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 5px 8px; }
+  .filter-groups { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-group { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 2px; }
+  .filter-btn { background: transparent; border: none; color: var(--text-dim); border-radius: 4px; padding: 5px 12px;
+                font-size: 12px; cursor: pointer; font-family: 'JetBrains Mono', monospace; }
+  .filter-btn.active { background: var(--gold); color: var(--bg); font-weight: 700; }
+  .reset-btn { display: flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--border);
+               color: var(--text-dim); border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
+  .reset-btn:hover { color: var(--text); border-color: #3a3a3f; }
+
+  .table-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: auto; max-height: 72vh; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th { text-align: left; padding: 10px 12px; color: var(--text-dim); font-size: 11px; font-family: 'JetBrains Mono', monospace;
+             letter-spacing: .04em; text-transform: uppercase; border-bottom: 1px solid var(--border); background: var(--surface);
+             white-space: nowrap; position: sticky; top: 0; user-select: none; cursor: pointer; }
+  thead th.no-sort { cursor: default; }
+  thead th.rank-col { padding-left: 16px; cursor: default; }
+  tbody tr { border-bottom: 1px solid var(--border-soft); cursor: pointer; }
+  tbody tr:hover { background: #1B1B1E; }
+  td { padding: 12px; }
+  td.rank { padding: 12px 10px 12px 16px; color: var(--gold); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+  td.thumb-cell { padding: 8px 4px 8px 8px; width: 40px; }
+  .thumb { width: 32px; height: 44px; object-fit: cover; border-radius: 3px; border: 1px solid var(--border); display: block; }
+  .thumb-placeholder { width: 32px; height: 44px; border-radius: 3px; border: 1px dashed var(--border); background: #1B1B1E; }
+  .card-name { font-weight: 600; font-size: 14px; }
+  .card-meta { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+  td.num { font-family: 'JetBrains Mono', monospace; font-size: 13px; white-space: nowrap; }
+  .badge { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); }
+  .badge-base { background: rgba(139,147,163,0.15); color: var(--text-dim); }
+  .badge-variant { background: rgba(139,147,163,0.15); color: #C9C9C9; }
+  .badge-uptown { background: rgba(201,162,39,0.15); color: var(--gold-bright); border-color: rgba(201,162,39,0.4); }
+  .badge-downtown { background: rgba(199,75,75,0.15); color: var(--crimson-bright); border-color: rgba(199,75,75,0.4); }
+  .profit-pos { color: var(--green); font-weight: 600; }
+  .profit-neg { color: var(--red); font-weight: 600; }
+  .profit-na { color: var(--text-dim); }
+  .remove-cell { padding: 12px 12px 12px 0; text-align: right; }
+  .remove-btn { background: transparent; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; border-radius: 4px; font-size: 14px; line-height: 1; }
+  .remove-btn:hover { color: var(--red); }
+  .empty-row td { padding: 40px 16px; text-align: center; color: var(--text-dim); }
+  .chevron { margin-left: 3px; font-size: 10px; }
+
+  .footnote { margin: 18px 0 0; color: #5C6270; font-size: 12px; line-height: 1.6; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; width: 100%; max-width: 460px;
+           padding: 20px; max-height: 90vh; overflow-y: auto; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-title { font-family: 'Fraunces', serif; font-size: 20px; margin: 0; font-weight: 600; }
+  .icon-btn { background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 18px; }
+  .error-box { background: rgba(193,68,60,0.12); border: 1px solid var(--red); color: #E38A83; font-size: 12.5px;
+               padding: 8px 10px; border-radius: 6px; margin-bottom: 12px; display: none; }
+  .error-box.show { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 11.5px; color: var(--text-dim); margin-bottom: 5px; }
+  .field input, .field select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+               color: var(--text); padding: 8px 10px; font-size: 13.5px; font-family: 'Inter', sans-serif; }
+  .field input:focus, .field select:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .modal-foot { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+  .cancel-btn { background: transparent; border: 1px solid var(--border); color: var(--text-dim); border-radius: 6px;
+                padding: 9px 14px; font-size: 13px; cursor: pointer; }
+  .save-btn { background: var(--gold); border: none; color: var(--bg); border-radius: 6px; padding: 9px 16px;
+              font-size: 13px; font-weight: 600; cursor: pointer; }
+  .delete-btn { background: transparent; border: 1px solid var(--red); color: var(--red); border-radius: 6px;
+                padding: 9px 12px; font-size: 12.5px; cursor: pointer; }
+
+  @media (max-width: 780px) {
+    .hide-mobile { display: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">DONRUSS OPTIC · CHASE CARD LEDGER</div>
+      <h1>Uptown &amp; Downtown Ledger</h1>
+      <p class="sub">Raw-to-gem profit tracking across Panini Donruss Optic Uptown and Downtown inserts, 2024–2025.</p>
+    </div>
+    <button class="add-btn" id="addBtn">+ Add card</button>
+  </header>
+
+  <section class="stat-bar" id="statBar"></section>
+
+  <div class="fee-row">
+    <label class="fee-label">
+      Grading fee assumed per card
+      <input type="number" id="feeInput" class="fee-input" value="25">
+    </label>
+
+    <div class="filter-groups">
+      <div class="filter-group" id="setFilterGroup">
+        <button class="filter-btn active" data-set="all">All Sets</button>
+        <button class="filter-btn" data-set="uptown">Uptown</button>
+        <button class="filter-btn" data-set="downtown">Downtown</button>
+      </div>
+      <div class="filter-group" id="typeFilterGroup">
+        <button class="filter-btn active" data-type="all">All</button>
+        <button class="filter-btn" data-type="base">Base</button>
+        <button class="filter-btn" data-type="variant">Variant</button>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="resetBtn" title="Restore the original combined seed data">↺ Reset to seed data</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="headRow"></tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <p class="footnote">
+    Raw / PSA 9 / PSA 10 prices are seeded from live market data pulled from SportsCardsPro for 2024–2025 Donruss Optic
+    Uptown and Downtown. Uptown's premium parallel is White Pandora /25; Downtown's is Black Pandora /25 — each player is
+    listed once as a base card and once as that parallel where both had priced sales, so raw-card and premium-parallel
+    profit can be compared side by side, across both insert sets at once. A few low-population parallels had no
+    PSA 10 sale on record and were left off rather than guessed; some entries also show no PSA 9 price for the same
+    reason — edit them in if you find a real sale. Gem rate and average grade stay blank until you log PSA population
+    data yourself. This file saves your edits in this browser's local storage, so they'll persist here but won't follow
+    you to a different browser or computer.
+  </p>
+
+</div>
+
+<div class="overlay" id="overlay">
+  <form class="modal" id="cardForm">
+    <div class="modal-head">
+      <h2 class="modal-title" id="modalTitle">Add a card</h2>
+      <button type="button" class="icon-btn" id="closeModalBtn">✕</button>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="form-grid">
+      <div class="field full">
+        <label>Insert set</label>
+        <select id="f-set">
+          <option value="Uptown">Uptown</option>
+          <option value="Downtown">Downtown</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>Player / card name</label>
+        <input id="f-player" placeholder="e.g. Shedeur Sanders">
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <input id="f-year" placeholder="2025">
+      </div>
+      <div class="field">
+        <label>Card #</label>
+        <input id="f-cardNumber" placeholder="17">
+      </div>
+      <div class="field full">
+        <label>Parallel</label>
+        <input id="f-parallel" placeholder="Base, Gold /10, White/Black Pandora /25…">
+      </div>
+      <div class="field full">
+        <label>Image URL (optional)</label>
+        <input id="f-image" placeholder="Paste a listing/thumbnail link">
+      </div>
+      <div class="field">
+        <label>Raw price ($)</label>
+        <input id="f-raw" type="number" step="0.01" placeholder="150">
+      </div>
+      <div class="field">
+        <label>PSA 9 price ($)</label>
+        <input id="f-psa9" type="number" step="0.01" placeholder="optional">
+      </div>
+      <div class="field">
+        <label>PSA 10 price ($)</label>
+        <input id="f-psa10" type="number" step="0.01" placeholder="300">
+      </div>
+      <div class="field">
+        <label>Gem rate (%)</label>
+        <input id="f-gemRate" type="number" step="1" placeholder="optional">
+      </div>
+      <div class="field">
+        <label>Avg. grade (1–10)</label>
+        <input id="f-avgGrade" type="number" step="0.01" placeholder="optional">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="delete-btn hide-mobile" id="deleteBtn" style="display:none;">Remove card</button>
+      <div style="flex:1;"></div>
+      <button type="button" class="cancel-btn" id="cancelBtn">Cancel</button>
+      <button type="submit" class="save-btn" id="saveBtn">Add card</button>
+    </div>
+  </form>
+</div>
+
+<script>
+// ---------- Seed data ----------
+// Seeded from 2024 & 2025 Panini Donruss Optic Uptown + Downtown real market data
+// (SportsCardsPro). Raw = ungraded market price.
+const SEED_CARDS = [
+  // Uptown 2024
+  { id:"up-1", set:"Uptown", player:"Caleb Williams", parallel:"White Pandora /25", cardNumber:"1", year:"2024", raw:5800, psa9:2170, psa10:5655.55, gemRate:null, avgGrade:null },
+  { id:"up-2", set:"Uptown", player:"Josh Allen", parallel:"Gold /10", cardNumber:"16", year:"2024", raw:5800, psa9:null, psa10:4605.50, gemRate:null, avgGrade:null },
+  { id:"up-3", set:"Uptown", player:"Drake Maye", parallel:"White Pandora /25", cardNumber:"4", year:"2024", raw:3269.44, psa9:2868.75, psa10:7461.91, gemRate:null, avgGrade:null },
+  { id:"up-4", set:"Uptown", player:"Jayden Daniels", parallel:"Gold /10", cardNumber:"2", year:"2024", raw:3077, psa9:null, psa10:8870.63, gemRate:null, avgGrade:null },
+  { id:"up-5", set:"Uptown", player:"Jayden Daniels", parallel:"White Pandora /25", cardNumber:"2", year:"2024", raw:2878.50, psa9:2250, psa10:5900, gemRate:null, avgGrade:null },
+  { id:"up-6", set:"Uptown", player:"Brock Bowers", parallel:"Gold /10", cardNumber:"8", year:"2024", raw:2841.78, psa9:null, psa10:3055.70, gemRate:null, avgGrade:null },
+  { id:"up-7", set:"Uptown", player:"Justin Jefferson", parallel:"Gold /10", cardNumber:"19", year:"2024", raw:1700, psa9:null, psa10:3124.68, gemRate:null, avgGrade:null },
+  { id:"up-8", set:"Uptown", player:"Marvin Harrison Jr.", parallel:"Gold /10", cardNumber:"5", year:"2024", raw:1962.50, psa9:1225, psa10:1280, gemRate:null, avgGrade:null },
+  { id:"up-9", set:"Uptown", player:"Malik Nabers", parallel:"White Pandora /25", cardNumber:"6", year:"2024", raw:1000, psa9:null, psa10:2225, gemRate:null, avgGrade:null },
+  { id:"up-10", set:"Uptown", player:"Blake Corum", parallel:"White Pandora /25", cardNumber:"14", year:"2024", raw:776.86, psa9:1141.71, psa10:2959.22, gemRate:null, avgGrade:null },
+  { id:"up-11", set:"Uptown", player:"CeeDee Lamb", parallel:"White Pandora /25", cardNumber:"21", year:"2024", raw:830.96, psa9:591.50, psa10:1500, gemRate:null, avgGrade:null },
+  { id:"up-12", set:"Uptown", player:"Xavier Worthy", parallel:"Gold /10", cardNumber:"7", year:"2024", raw:810, psa9:1051, psa10:1500, gemRate:null, avgGrade:null },
+  { id:"up-13", set:"Uptown", player:"Derrick Henry", parallel:"White Pandora /25", cardNumber:"18", year:"2024", raw:862.50, psa9:828, psa10:3256.29, gemRate:null, avgGrade:null },
+  { id:"up-14", set:"Uptown", player:"Caleb Williams", parallel:"Base", cardNumber:"1", year:"2024", raw:419.86, psa9:530, psa10:1379.05, gemRate:null, avgGrade:null },
+  { id:"up-15", set:"Uptown", player:"Drake Maye", parallel:"Base", cardNumber:"4", year:"2024", raw:402.50, psa9:482.50, psa10:1237.50, gemRate:null, avgGrade:null },
+  { id:"up-16", set:"Uptown", player:"J.J. McCarthy", parallel:"White Pandora /25", cardNumber:"10", year:"2024", raw:2037.50, psa9:1742.16, psa10:2450, gemRate:null, avgGrade:null },
+  { id:"up-17", set:"Uptown", player:"Michael Penix Jr.", parallel:"White Pandora /25", cardNumber:"9", year:"2024", raw:1312.50, psa9:489.68, psa10:1000, gemRate:null, avgGrade:null },
+  { id:"up-18", set:"Uptown", player:"John Elway", parallel:"Gold /10", cardNumber:"23", year:"2024", raw:1200, psa9:786.90, psa10:2092.50, gemRate:null, avgGrade:null },
+  { id:"up-19", set:"Uptown", player:"Josh Allen", parallel:"Base", cardNumber:"16", year:"2024", raw:284.21, psa9:343.03, psa10:649.99, gemRate:null, avgGrade:null },
+  { id:"up-20", set:"Uptown", player:"Jayden Daniels", parallel:"Base", cardNumber:"2", year:"2024", raw:312.83, psa9:349.44, psa10:708.02, gemRate:null, avgGrade:null },
+  { id:"up-21", set:"Uptown", player:"Brock Bowers", parallel:"Base", cardNumber:"8", year:"2024", raw:189.94, psa9:211.81, psa10:411.98, gemRate:null, avgGrade:null },
+  { id:"up-22", set:"Uptown", player:"Justin Jefferson", parallel:"Base", cardNumber:"19", year:"2024", raw:193.35, psa9:229.65, psa10:380.00, gemRate:null, avgGrade:null },
+  { id:"up-23", set:"Uptown", player:"Marvin Harrison Jr.", parallel:"Base", cardNumber:"5", year:"2024", raw:160.00, psa9:175.25, psa10:295.00, gemRate:null, avgGrade:null },
+  { id:"up-24", set:"Uptown", player:"Malik Nabers", parallel:"Base", cardNumber:"6", year:"2024", raw:204.98, psa9:219.00, psa10:419.91, gemRate:null, avgGrade:null },
+  { id:"up-25", set:"Uptown", player:"Blake Corum", parallel:"Base", cardNumber:"14", year:"2024", raw:130.82, psa9:150.00, psa10:211.27, gemRate:null, avgGrade:null },
+  { id:"up-26", set:"Uptown", player:"CeeDee Lamb", parallel:"Base", cardNumber:"21", year:"2024", raw:190.44, psa9:204.00, psa10:328.87, gemRate:null, avgGrade:null },
+  { id:"up-27", set:"Uptown", player:"Xavier Worthy", parallel:"Base", cardNumber:"7", year:"2024", raw:144.07, psa9:173.13, psa10:260.00, gemRate:null, avgGrade:null },
+  { id:"up-28", set:"Uptown", player:"Derrick Henry", parallel:"Base", cardNumber:"18", year:"2024", raw:175.00, psa9:200.65, psa10:315.00, gemRate:null, avgGrade:null },
+  { id:"up-29", set:"Uptown", player:"J.J. McCarthy", parallel:"Base", cardNumber:"10", year:"2024", raw:132.13, psa9:163.75, psa10:219.78, gemRate:null, avgGrade:null },
+  { id:"up-30", set:"Uptown", player:"Michael Penix Jr.", parallel:"Base", cardNumber:"9", year:"2024", raw:137.25, psa9:154.49, psa10:232.25, gemRate:null, avgGrade:null },
+  { id:"up-31", set:"Uptown", player:"John Elway", parallel:"Base", cardNumber:"23", year:"2024", raw:160.00, psa9:189.00, psa10:296.20, gemRate:null, avgGrade:null },
+  // Uptown 2025
+  { id:"up-32", set:"Uptown", player:"Tyler Shough", parallel:"White Pandora /25", cardNumber:"24", year:"2025", raw:2500, psa9:2789.11, psa10:2866.97, gemRate:null, avgGrade:null },
+  { id:"up-33", set:"Uptown", player:"Shedeur Sanders", parallel:"White Pandora /25", cardNumber:"18", year:"2025", raw:1900, psa9:2946.84, psa10:8336.51, gemRate:null, avgGrade:null },
+  { id:"up-34", set:"Uptown", player:"Puka Nacua", parallel:"White Pandora /25", cardNumber:"8", year:"2025", raw:1700, psa9:2634.45, psa10:7441.69, gemRate:null, avgGrade:null },
+  { id:"up-35", set:"Uptown", player:"Mike Evans", parallel:"White Pandora /25", cardNumber:"15", year:"2025", raw:1600, psa9:2483.77, psa10:7028.97, gemRate:null, avgGrade:null },
+  { id:"up-36", set:"Uptown", player:"Jalen Hurts", parallel:"White Pandora /25", cardNumber:"9", year:"2025", raw:1592.63, psa9:1627.73, psa10:4609.08, gemRate:null, avgGrade:null },
+  { id:"up-37", set:"Uptown", player:"TreVeyon Henderson", parallel:"White Pandora /25", cardNumber:"23", year:"2025", raw:1366.93, psa9:1585.20, psa10:4488.23, gemRate:null, avgGrade:null },
+  { id:"up-38", set:"Uptown", player:"Matthew Golden", parallel:"White Pandora /25", cardNumber:"14", year:"2025", raw:1350, psa9:2093.60, psa10:5912.50, gemRate:null, avgGrade:null },
+  { id:"up-39", set:"Uptown", player:"Omarion Hampton", parallel:"White Pandora /25", cardNumber:"16", year:"2025", raw:1200, psa9:1862.10, psa10:5258.93, gemRate:null, avgGrade:null },
+  { id:"up-40", set:"Uptown", player:"Deion Sanders", parallel:"White Pandora /25", cardNumber:"7", year:"2025", raw:1195, psa9:1855.25, psa10:3000, gemRate:null, avgGrade:null },
+  { id:"up-41", set:"Uptown", player:"Brian Urlacher", parallel:"White Pandora /25", cardNumber:"3", year:"2025", raw:1067.25, psa9:1641.18, psa10:4637.70, gemRate:null, avgGrade:null },
+  { id:"up-42", set:"Uptown", player:"Abdul Carter", parallel:"White Pandora /25", cardNumber:"1", year:"2025", raw:1016.88, psa9:780.50, psa10:1282.25, gemRate:null, avgGrade:null },
+  { id:"up-43", set:"Uptown", player:"Cam Skattebo", parallel:"White Pandora /25", cardNumber:"5", year:"2025", raw:980, psa9:1524.20, psa10:4310.66, gemRate:null, avgGrade:null },
+  { id:"up-44", set:"Uptown", player:"Jaxson Dart", parallel:"Base", cardNumber:"11", year:"2025", raw:367.43, psa9:524.99, psa10:1500, gemRate:null, avgGrade:null },
+  { id:"up-45", set:"Uptown", player:"Cam Ward", parallel:"Base", cardNumber:"6", year:"2025", raw:267.23, psa9:368.43, psa10:787.50, gemRate:null, avgGrade:null },
+  { id:"up-46", set:"Uptown", player:"Ashton Jeanty", parallel:"Base", cardNumber:"2", year:"2025", raw:205, psa9:279.99, psa10:545.78, gemRate:null, avgGrade:null },
+  { id:"up-47", set:"Uptown", player:"Terrell Davis", parallel:"Base", cardNumber:"19", year:"2025", raw:143.74, psa9:204.99, psa10:1088, gemRate:null, avgGrade:null },
+  { id:"up-48", set:"Uptown", player:"Tyler Shough", parallel:"Base", cardNumber:"24", year:"2025", raw:213.78, psa9:305.00, psa10:755.00, gemRate:null, avgGrade:null },
+  { id:"up-49", set:"Uptown", player:"Shedeur Sanders", parallel:"Base", cardNumber:"18", year:"2025", raw:185.00, psa9:228.28, psa10:405.00, gemRate:null, avgGrade:null },
+  { id:"up-50", set:"Uptown", player:"Puka Nacua", parallel:"Base", cardNumber:"8", year:"2025", raw:191.25, psa9:288.78, psa10:853.75, gemRate:null, avgGrade:null },
+  { id:"up-51", set:"Uptown", player:"Mike Evans", parallel:"Base", cardNumber:"15", year:"2025", raw:175.25, psa9:280.00, psa10:570.00, gemRate:null, avgGrade:null },
+  { id:"up-52", set:"Uptown", player:"Jalen Hurts", parallel:"Base", cardNumber:"9", year:"2025", raw:182.81, psa9:235.00, psa10:544.45, gemRate:null, avgGrade:null },
+  { id:"up-53", set:"Uptown", player:"TreVeyon Henderson", parallel:"Base", cardNumber:"23", year:"2025", raw:162.86, psa9:206.29, psa10:671.36, gemRate:null, avgGrade:null },
+  { id:"up-54", set:"Uptown", player:"Matthew Golden", parallel:"Base", cardNumber:"14", year:"2025", raw:162.02, psa9:188.12, psa10:428.51, gemRate:null, avgGrade:null },
+  { id:"up-55", set:"Uptown", player:"Omarion Hampton", parallel:"Base", cardNumber:"16", year:"2025", raw:163.75, psa9:211.25, psa10:407.00, gemRate:null, avgGrade:null },
+  { id:"up-56", set:"Uptown", player:"Deion Sanders", parallel:"Base", cardNumber:"7", year:"2025", raw:176.47, psa9:248.42, psa10:599.23, gemRate:null, avgGrade:null },
+  { id:"up-57", set:"Uptown", player:"Brian Urlacher", parallel:"Base", cardNumber:"3", year:"2025", raw:162.65, psa9:234.89, psa10:902.46, gemRate:null, avgGrade:null },
+  { id:"up-58", set:"Uptown", player:"Abdul Carter", parallel:"Base", cardNumber:"1", year:"2025", raw:136.30, psa9:193.00, psa10:380.18, gemRate:null, avgGrade:null },
+  { id:"up-59", set:"Uptown", player:"Cam Skattebo", parallel:"Base", cardNumber:"5", year:"2025", raw:212.84, psa9:321.50, psa10:760.00, gemRate:null, avgGrade:null },
+  { id:"up-60", set:"Uptown", player:"Cam Ward", parallel:"White Pandora /25", cardNumber:"6", year:"2025", raw:3049.00, psa9:null, psa10:5300.00, gemRate:null, avgGrade:null },
+  // Downtown 2024
+  { id:"dt-1", set:"Downtown", player:"Drake Maye", parallel:"Base", cardNumber:"13", year:"2024", raw:800, psa9:1226.67, psa10:3298.43, gemRate:null, avgGrade:null },
+  { id:"dt-2", set:"Downtown", player:"Drake Maye", parallel:"Black Pandora /25", cardNumber:"13", year:"2024", raw:12600, psa9:null, psa10:21750.50, gemRate:null, avgGrade:null },
+  { id:"dt-3", set:"Downtown", player:"Caleb Williams", parallel:"Base", cardNumber:"21", year:"2024", raw:1055.81, psa9:1224.10, psa10:3147.25, gemRate:null, avgGrade:null },
+  { id:"dt-4", set:"Downtown", player:"Caleb Williams", parallel:"Black Pandora /25", cardNumber:"21", year:"2024", raw:3150, psa9:null, psa10:9750, gemRate:null, avgGrade:null },
+  { id:"dt-5", set:"Downtown", player:"Jayden Daniels", parallel:"Base", cardNumber:"16", year:"2024", raw:744.72, psa9:810, psa10:2086.40, gemRate:null, avgGrade:null },
+  { id:"dt-6", set:"Downtown", player:"Jayden Daniels", parallel:"Black Pandora /25", cardNumber:"16", year:"2024", raw:10200, psa9:4878.88, psa10:25000, gemRate:null, avgGrade:null },
+  { id:"dt-7", set:"Downtown", player:"Josh Allen", parallel:"Base", cardNumber:"2", year:"2024", raw:592.19, psa9:723.96, psa10:1560, gemRate:null, avgGrade:null },
+  { id:"dt-8", set:"Downtown", player:"Josh Allen", parallel:"Black Pandora /25", cardNumber:"2", year:"2024", raw:6800, psa9:3592.69, psa10:6561, gemRate:null, avgGrade:null },
+  { id:"dt-9", set:"Downtown", player:"Bo Nix", parallel:"Base", cardNumber:"19", year:"2024", raw:628.26, psa9:695, psa10:1750, gemRate:null, avgGrade:null },
+  { id:"dt-10", set:"Downtown", player:"Bo Nix", parallel:"Black Pandora /25", cardNumber:"19", year:"2024", raw:5507.39, psa9:7971.20, psa10:11000, gemRate:null, avgGrade:null },
+  { id:"dt-11", set:"Downtown", player:"Rome Odunze", parallel:"Base", cardNumber:"15", year:"2024", raw:315.02, psa9:361.55, psa10:570, gemRate:null, avgGrade:null },
+  { id:"dt-12", set:"Downtown", player:"Rome Odunze", parallel:"Black Pandora /25", cardNumber:"15", year:"2024", raw:1900, psa9:2358.59, psa10:3149, gemRate:null, avgGrade:null },
+  { id:"dt-13", set:"Downtown", player:"Sam LaPorta", parallel:"Base", cardNumber:"6", year:"2024", raw:258, psa9:303.88, psa10:450, gemRate:null, avgGrade:null },
+  { id:"dt-14", set:"Downtown", player:"Sam LaPorta", parallel:"Black Pandora /25", cardNumber:"6", year:"2024", raw:1504.53, psa9:1775, psa10:2275, gemRate:null, avgGrade:null },
+  { id:"dt-15", set:"Downtown", player:"Terrell Davis", parallel:"Base", cardNumber:"24", year:"2024", raw:253.33, psa9:343, psa10:592.59, gemRate:null, avgGrade:null },
+  { id:"dt-16", set:"Downtown", player:"Terrell Davis", parallel:"Black Pandora /25", cardNumber:"24", year:"2024", raw:1389.08, psa9:2018.78, psa10:5236.19, gemRate:null, avgGrade:null },
+  { id:"dt-17", set:"Downtown", player:"Tyreek Hill", parallel:"Base", cardNumber:"3", year:"2024", raw:204.05, psa9:240, psa10:376.25, gemRate:null, avgGrade:null },
+  { id:"dt-18", set:"Downtown", player:"Tyreek Hill", parallel:"Black Pandora /25", cardNumber:"3", year:"2024", raw:920, psa9:1350, psa10:1634.50, gemRate:null, avgGrade:null },
+  { id:"dt-19", set:"Downtown", player:"Michael Vick", parallel:"Base", cardNumber:"25", year:"2024", raw:350, psa9:386.70, psa10:752, gemRate:null, avgGrade:null },
+  { id:"dt-20", set:"Downtown", player:"Michael Vick", parallel:"Black Pandora /25", cardNumber:"25", year:"2024", raw:1824.75, psa9:2424, psa10:8996.33, gemRate:null, avgGrade:null },
+  { id:"dt-21", set:"Downtown", player:"Lamar Jackson", parallel:"Base", cardNumber:"1", year:"2024", raw:369.94, psa9:400, psa10:715, gemRate:null, avgGrade:null },
+  { id:"dt-22", set:"Downtown", player:"Lamar Jackson", parallel:"Black Pandora /25", cardNumber:"1", year:"2024", raw:1930.81, psa9:1895.72, psa10:5029.29, gemRate:null, avgGrade:null },
+  { id:"dt-23", set:"Downtown", player:"Malik Nabers", parallel:"Base", cardNumber:"18", year:"2024", raw:422.37, psa9:441.63, psa10:854.50, gemRate:null, avgGrade:null },
+  { id:"dt-24", set:"Downtown", player:"Malik Nabers", parallel:"Black Pandora /25", cardNumber:"18", year:"2024", raw:2547.79, psa9:null, psa10:3550, gemRate:null, avgGrade:null },
+  // Downtown 2025
+  { id:"dt-25", set:"Downtown", player:"Aaron Rodgers", parallel:"Base", cardNumber:"25", year:"2025", raw:425, psa9:600, psa10:1100, gemRate:null, avgGrade:null },
+  { id:"dt-26", set:"Downtown", player:"Aaron Rodgers", parallel:"Black Pandora /25", cardNumber:"25", year:"2025", raw:1961, psa9:3039.71, psa10:8594.24, gemRate:null, avgGrade:null },
+  { id:"dt-27", set:"Downtown", player:"Lamar Jackson", parallel:"Base", cardNumber:"1", year:"2025", raw:350.36, psa9:444.45, psa10:1250, gemRate:null, avgGrade:null },
+  { id:"dt-28", set:"Downtown", player:"Lamar Jackson", parallel:"Black Pandora /25", cardNumber:"1", year:"2025", raw:2950.75, psa9:2941, psa10:4500, gemRate:null, avgGrade:null },
+  { id:"dt-29", set:"Downtown", player:"Troy Aikman", parallel:"Base", cardNumber:"21", year:"2025", raw:600.93, psa9:784.50, psa10:1699.99, gemRate:null, avgGrade:null },
+  { id:"dt-30", set:"Downtown", player:"Troy Aikman", parallel:"Black Pandora /25", cardNumber:"21", year:"2025", raw:2375, psa9:2550, psa10:10407.75, gemRate:null, avgGrade:null },
+  { id:"dt-31", set:"Downtown", player:"CeeDee Lamb", parallel:"Base", cardNumber:"9", year:"2025", raw:372.31, psa9:392.50, psa10:865, gemRate:null, avgGrade:null },
+  { id:"dt-32", set:"Downtown", player:"CeeDee Lamb", parallel:"Black Pandora /25", cardNumber:"9", year:"2025", raw:1900.50, psa9:2946.19, psa10:8329.70, gemRate:null, avgGrade:null },
+  { id:"dt-33", set:"Downtown", player:"Calvin Johnson", parallel:"Base", cardNumber:"4", year:"2025", raw:410, psa9:574.50, psa10:1505.50, gemRate:null, avgGrade:null },
+  { id:"dt-34", set:"Downtown", player:"Calvin Johnson", parallel:"Black Pandora /25", cardNumber:"4", year:"2025", raw:1350, psa9:1399.81, psa10:4012.41, gemRate:null, avgGrade:null },
+  { id:"dt-35", set:"Downtown", player:"Cam Ward", parallel:"Base", cardNumber:"12", year:"2025", raw:553.41, psa9:602.50, psa10:1650, gemRate:null, avgGrade:null },
+  { id:"dt-36", set:"Downtown", player:"Cam Ward", parallel:"Black Pandora /25", cardNumber:"12", year:"2025", raw:4093.94, psa9:9750, psa10:11700, gemRate:null, avgGrade:null },
+  { id:"dt-37", set:"Downtown", player:"Travis Hunter", parallel:"Base", cardNumber:"13", year:"2025", raw:338.11, psa9:546.21, psa10:1545.41, gemRate:null, avgGrade:null },
+  { id:"dt-38", set:"Downtown", player:"Travis Hunter", parallel:"Black Pandora /25", cardNumber:"13", year:"2025", raw:2294.67, psa9:2391.72, psa10:3075, gemRate:null, avgGrade:null },
+  { id:"dt-39", set:"Downtown", player:"Tyler Shough", parallel:"Base", cardNumber:"19", year:"2025", raw:415.77, psa9:504.24, psa10:1130.72, gemRate:null, avgGrade:null },
+  { id:"dt-40", set:"Downtown", player:"Tyler Shough", parallel:"Black Pandora /25", cardNumber:"19", year:"2025", raw:3783.02, psa9:5856.99, psa10:7028, gemRate:null, avgGrade:null },
+  { id:"dt-41", set:"Downtown", player:"Sterling Sharpe", parallel:"Base", cardNumber:"24", year:"2025", raw:381, psa9:455.63, psa10:1350, gemRate:null, avgGrade:null },
+  { id:"dt-42", set:"Downtown", player:"Sterling Sharpe", parallel:"Black Pandora /25", cardNumber:"24", year:"2025", raw:2000, psa9:3102.71, psa10:8781.83, gemRate:null, avgGrade:null },
+  { id:"dt-43", set:"Downtown", player:"Abdul Carter", parallel:"Base", cardNumber:"20", year:"2025", raw:212.13, psa9:661.65, psa10:794, gemRate:null, avgGrade:null },
+  { id:"dt-44", set:"Downtown", player:"Abdul Carter", parallel:"Black Pandora /25", cardNumber:"20", year:"2025", raw:1220, psa9:1172, psa10:2290.74, gemRate:null, avgGrade:null },
+  { id:"dt-45", set:"Downtown", player:"Derrick Henry", parallel:"Base", cardNumber:"3", year:"2025", raw:337.50, psa9:340, psa10:599, gemRate:null, avgGrade:null },
+  { id:"dt-46", set:"Downtown", player:"Derrick Henry", parallel:"Black Pandora /25", cardNumber:"3", year:"2025", raw:1775, psa9:2319.42, psa10:3161.08, gemRate:null, avgGrade:null },
+  { id:"dt-47", set:"Downtown", player:"Jaxson Dart", parallel:"Base", cardNumber:"14", year:"2025", raw:848.43, psa9:921.10, psa10:2328.90, gemRate:null, avgGrade:null },
+  { id:"dt-48", set:"Downtown", player:"Jaxson Dart", parallel:"Black Pandora /25", cardNumber:"14", year:"2025", raw:5125, psa9:5710.81, psa10:9925.07, gemRate:null, avgGrade:null }
+];
+
+const STORAGE_KEY = "donrussLedgerCards";
+const FEE_KEY = "donrussLedgerFee";
+
+// ---------- State ----------
+let cards = [];
+let fee = 25;
+let sortKey = "profit";
+let sortDir = "desc";
+let typeFilter = "all";
+let setFilter = "all";
+let editingId = null;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    cards = raw ? JSON.parse(raw) : SEED_CARDS.slice();
+  } catch (e) {
+    cards = SEED_CARDS.slice();
+  }
+  try {
+    const f = localStorage.getItem(FEE_KEY);
+    if (f !== null) fee = Number(f);
+  } catch (e) {}
+}
+
+function saveCards() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cards)); } catch (e) {}
+}
+function saveFee() {
+  try { localStorage.setItem(FEE_KEY, String(fee)); } catch (e) {}
+}
+
+// ---------- Helpers ----------
+function money(n) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+}
+function pctStr(n) {
+  if (n === null || n === undefined || isNaN(n)) return "—";
+  return (n > 0 ? "+" : "") + n.toFixed(0) + "%";
+}
+function esc(s) {
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+
+function enrich(list) {
+  return list.map((c) => {
+    const raw = c.raw === "" || c.raw === null || c.raw === undefined ? null : Number(c.raw);
+    const psa10 = c.psa10 === "" || c.psa10 === null || c.psa10 === undefined ? null : Number(c.psa10);
+    const psa9 = c.psa9 === "" || c.psa9 === null || c.psa9 === undefined ? null : Number(c.psa9);
+    const gemRate = c.gemRate === "" || c.gemRate === null || c.gemRate === undefined ? null : Number(c.gemRate);
+    const avgGrade = c.avgGrade === "" || c.avgGrade === null || c.avgGrade === undefined ? null : Number(c.avgGrade);
+    const profit = raw !== null && psa10 !== null ? psa10 - raw - fee : null;
+    const profitPct = profit !== null && (raw + fee) > 0 ? (profit / (raw + fee)) * 100 : null;
+    const cardType = (c.parallel || "").trim().toLowerCase() === "base" || !c.parallel ? "Base" : "Variant";
+    return Object.assign({}, c, { raw, psa10, psa9, gemRate, avgGrade, profit, profitPct, cardType });
+  });
+}
+
+const COLUMNS = [
+  { key: "player", label: "Card", sortable: false },
+  { key: "set", label: "Set" },
+  { key: "cardType", label: "Type" },
+  { key: "raw", label: "Raw" },
+  { key: "psa9", label: "PSA 9", hideMobile: true },
+  { key: "psa10", label: "PSA 10" },
+  { key: "profit", label: "Profit $" },
+  { key: "profitPct", label: "Profit %" },
+  { key: "gemRate", label: "Gem Rate", hideMobile: true },
+  { key: "avgGrade", label: "Avg Grade", hideMobile: true },
+];
+
+// ---------- Render ----------
+function render() {
+  const enriched = enrich(cards);
+
+  const filtered = enriched.filter((c) => {
+    if (typeFilter !== "all" && c.cardType.toLowerCase() !== typeFilter) return false;
+    if (setFilter !== "all" && (c.set || "").toLowerCase() !== setFilter) return false;
+    return true;
+  });
+
+  const sorted = filtered.slice().sort((a, b) => {
+    if (sortKey === "cardType" || sortKey === "set") {
+      const av = String(a[sortKey]), bv = String(b[sortKey]);
+      return sortDir === "desc" ? bv.localeCompare(av) : av.localeCompare(bv);
+    }
+    let av = a[sortKey], bv = b[sortKey];
+    if (av === null || av === undefined) av = -Infinity;
+    if (bv === null || bv === undefined) bv = -Infinity;
+    return sortDir === "desc" ? bv - av : av - bv;
+  });
+
+  // Stats
+  const withProfit = enriched.filter((c) => c.profit !== null);
+  const topGainer = withProfit.length ? withProfit.reduce((a, b) => (b.profit > a.profit ? b : a)) : null;
+  const avgProfit = withProfit.length ? withProfit.reduce((s, c) => s + c.profit, 0) / withProfit.length : null;
+  const withGem = enriched.filter((c) => c.gemRate !== null);
+  const avgGemRate = withGem.length ? withGem.reduce((s, c) => s + c.gemRate, 0) / withGem.length : null;
+  const uptownCount = enriched.filter((c) => c.set === "Uptown").length;
+  const downtownCount = enriched.filter((c) => c.set === "Downtown").length;
+
+  const statBar = document.getElementById("statBar");
+  statBar.innerHTML = `
+    <div class="stat">
+      <div class="stat-label">Cards tracked</div>
+      <div class="stat-value">${cards.length}</div>
+      <div class="stat-sub">${uptownCount} Uptown · ${downtownCount} Downtown</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg. profit (after fee)</div>
+      <div class="stat-value" style="color:${avgProfit === null ? '#EDEAE2' : (avgProfit >= 0 ? 'var(--green)' : 'var(--red)')}">${money(avgProfit)}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Top gainer</div>
+      <div class="stat-value" style="color:var(--gold-bright)">${topGainer ? esc(topGainer.player) : "—"}</div>
+      <div class="stat-sub">${topGainer ? money(topGainer.profit) + " · " + topGainer.set : ""}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg. gem rate logged</div>
+      <div class="stat-value">${avgGemRate !== null ? avgGemRate.toFixed(0) + "%" : "No data yet"}</div>
+    </div>
+  `;
+
+  // Header row
+  const headRow = document.getElementById("headRow");
+  let headHtml = `<th class="rank-col">#</th><th class="hide-mobile no-sort"></th>`;
+  COLUMNS.forEach((col) => {
+    const arrow = sortKey === col.key ? `<span class="chevron">${sortDir === "desc" ? "▼" : "▲"}</span>` : "";
+    const cls = (col.sortable === false ? "no-sort" : "") + (col.hideMobile ? " hide-mobile" : "");
+    headHtml += `<th class="${cls}" data-key="${col.key}" data-sortable="${col.sortable !== false}">${col.label}${arrow}</th>`;
+  });
+  headHtml += `<th class="no-sort"></th>`;
+  headRow.innerHTML = headHtml;
+  headRow.querySelectorAll("th[data-sortable='true']").forEach((th) => {
+    th.addEventListener("click", () => handleSort(th.getAttribute("data-key")));
+  });
+
+  // Body rows
+  const tbody = document.getElementById("tableBody");
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="13">No cards match this filter.</td></tr>`;
+    return;
+  }
+  let rowsHtml = "";
+  sorted.forEach((c, i) => {
+    const rank = "N." + String(i + 1).padStart(2, "0");
+    const setBadgeClass = c.set === "Downtown" ? "badge-downtown" : "badge-uptown";
+    const typeBadgeClass = c.cardType === "Base" ? "badge-base" : "badge-variant";
+    const profitClass = c.profit === null ? "profit-na" : (c.profit >= 0 ? "profit-pos" : "profit-neg");
+    const profitPctClass = c.profitPct === null ? "profit-na" : (c.profitPct >= 0 ? "profit-pos" : "profit-neg");
+    const thumbHtml = c.image
+      ? `<img src="${esc(c.image)}" class="thumb" alt="" onerror="this.style.display='none'">`
+      : `<div class="thumb-placeholder"></div>`;
+    rowsHtml += `
+      <tr data-id="${esc(c.id)}">
+        <td class="rank">${rank}</td>
+        <td class="thumb-cell hide-mobile">${thumbHtml}</td>
+        <td>
+          <div class="card-name">${esc(c.player)}</div>
+          <div class="card-meta">${esc(c.year)} · ${esc(c.parallel || "Base")}${c.cardNumber ? " · #" + esc(c.cardNumber) : ""}</div>
+        </td>
+        <td><span class="badge ${setBadgeClass}">${esc(c.set)}</span></td>
+        <td><span class="badge ${typeBadgeClass}">${esc(c.cardType)}</span></td>
+        <td class="num">${money(c.raw)}</td>
+        <td class="num hide-mobile">${money(c.psa9)}</td>
+        <td class="num">${money(c.psa10)}</td>
+        <td class="num ${profitClass}">${money(c.profit)}</td>
+        <td class="num ${profitPctClass}">${pctStr(c.profitPct)}</td>
+        <td class="num hide-mobile">${c.gemRate !== null ? c.gemRate.toFixed(0) + "%" : "—"}</td>
+        <td class="num hide-mobile">${c.avgGrade !== null ? c.avgGrade.toFixed(2) : "—"}</td>
+        <td class="remove-cell"><button class="remove-btn" data-remove="${esc(c.id)}" title="Remove card">✕</button></td>
+      </tr>
+    `;
+  });
+  tbody.innerHTML = rowsHtml;
+
+  tbody.querySelectorAll("tr[data-id]").forEach((tr) => {
+    tr.addEventListener("click", (e) => {
+      if (e.target.closest("[data-remove]")) return;
+      openEdit(tr.getAttribute("data-id"));
+    });
+  });
+  tbody.querySelectorAll("[data-remove]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeCard(btn.getAttribute("data-remove"));
+    });
+  });
+}
+
+function handleSort(key) {
+  if (sortKey === key) {
+    sortDir = sortDir === "desc" ? "asc" : "desc";
+  } else {
+    sortKey = key;
+    sortDir = "desc";
+  }
+  render();
+}
+
+// ---------- CRUD ----------
+function removeCard(id) {
+  cards = cards.filter((c) => c.id !== id);
+  saveCards();
+  render();
+}
+
+function resetToSeed() {
+  cards = SEED_CARDS.slice();
+  saveCards();
+  render();
+}
+
+// ---------- Modal ----------
+const overlay = document.getElementById("overlay");
+const form = document.getElementById("cardForm");
+const errorBox = document.getElementById("errorBox");
+
+function openAdd() {
+  editingId = null;
+  document.getElementById("modalTitle").textContent = "Add a card";
+  document.getElementById("saveBtn").textContent = "Add card";
+  document.getElementById("deleteBtn").style.display = "none";
+  errorBox.classList.remove("show");
+  form.reset();
+  document.getElementById("f-set").value = "Uptown";
+  document.getElementById("f-year").value = "2025";
+  overlay.classList.add("open");
+}
+
+function openEdit(id) {
+  const c = cards.find((x) => x.id === id);
+  if (!c) return;
+  editingId = id;
+  document.getElementById("modalTitle").textContent = "Edit card";
+  document.getElementById("saveBtn").textContent = "Save changes";
+  document.getElementById("deleteBtn").style.display = "inline-block";
+  errorBox.classList.remove("show");
+  document.getElementById("f-set").value = c.set || "Uptown";
+  document.getElementById("f-player").value = c.player || "";
+  document.getElementById("f-year").value = c.year || "";
+  document.getElementById("f-cardNumber").value = c.cardNumber || "";
+  document.getElementById("f-parallel").value = c.parallel || "";
+  document.getElementById("f-image").value = c.image || "";
+  document.getElementById("f-raw").value = c.raw ?? "";
+  document.getElementById("f-psa9").value = c.psa9 ?? "";
+  document.getElementById("f-psa10").value = c.psa10 ?? "";
+  document.getElementById("f-gemRate").value = c.gemRate ?? "";
+  document.getElementById("f-avgGrade").value = c.avgGrade ?? "";
+  overlay.classList.add("open");
+}
+
+function closeModal() {
+  overlay.classList.remove("open");
+}
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const player = document.getElementById("f-player").value.trim();
+  const rawVal = document.getElementById("f-raw").value;
+  const psa10Val = document.getElementById("f-psa10").value;
+  if (!player) {
+    errorBox.textContent = "Player / card name is required.";
+    errorBox.classList.add("show");
+    return;
+  }
+  if (rawVal === "" && psa10Val === "") {
+    errorBox.textContent = "Enter at least a raw price or a PSA 10 price.";
+    errorBox.classList.add("show");
+    return;
+  }
+  const payload = {
+    set: document.getElementById("f-set").value,
+    player: player,
+    parallel: document.getElementById("f-parallel").value.trim(),
+    cardNumber: document.getElementById("f-cardNumber").value.trim(),
+    year: document.getElementById("f-year").value.trim(),
+    raw: rawVal === "" ? null : Number(rawVal),
+    psa9: document.getElementById("f-psa9").value === "" ? null : Number(document.getElementById("f-psa9").value),
+    psa10: psa10Val === "" ? null : Number(psa10Val),
+    gemRate: document.getElementById("f-gemRate").value === "" ? null : Number(document.getElementById("f-gemRate").value),
+    avgGrade: document.getElementById("f-avgGrade").value === "" ? null : Number(document.getElementById("f-avgGrade").value),
+    image: document.getElementById("f-image").value.trim() || null,
+  };
+  if (editingId) {
+    cards = cards.map((c) => (c.id === editingId ? Object.assign({}, c, payload) : c));
+  } else {
+    cards.push(Object.assign({ id: "c-" + Date.now() }, payload));
+  }
+  saveCards();
+  closeModal();
+  render();
+});
+
+document.getElementById("addBtn").addEventListener("click", openAdd);
+document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+document.getElementById("cancelBtn").addEventListener("click", closeModal);
+overlay.addEventListener("click", (e) => { if (e.target === overlay) closeModal(); });
+document.getElementById("deleteBtn").addEventListener("click", () => {
+  if (editingId) removeCard(editingId);
+  closeModal();
+});
+
+// ---------- Filters & fee ----------
+document.getElementById("setFilterGroup").addEventListener("click", (e) => {
+  const btn = e.target.closest(".filter-btn");
+  if (!btn) return;
+  setFilter = btn.getAttribute("data-set");
+  document.querySelectorAll("#setFilterGroup .filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  render();
+});
+document.getElementById("typeFilterGroup").addEventListener("click", (e) => {
+  const btn = e.target.closest(".filter-btn");
+  if (!btn) return;
+  typeFilter = btn.getAttribute("data-type");
+  document.querySelectorAll("#typeFilterGroup .filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+  render();
+});
+document.getElementById("feeInput").addEventListener("input", (e) => {
+  fee = Number(e.target.value) || 0;
+  saveFee();
+  render();
+});
+document.getElementById("resetBtn").addEventListener("click", resetToSeed);
+
+// ---------- Init ----------
+loadState();
+document.getElementById("feeInput").value = fee;
+render();
+</script>
+</body>
+</html>
