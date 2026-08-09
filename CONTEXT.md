@@ -23,6 +23,23 @@ Each card object has:
 Derived at render time (not stored): `profit = psa10 - raw - fee`,
 `profitPct`, `cardType` (`"Base"` if parallel is empty/"Base", else `"Variant"`).
 
+## Price history / change tracking
+Each card optionally has a `history` array: `[{ date: "YYYY-MM-DD", raw, psa9, psa10 }, ...]`,
+sorted ascending by date. A snapshot of the card's current raw/psa9/psa10 is upserted under
+today's date automatically every time the card is saved (add or edit) — if a snapshot for today
+already exists it's overwritten, so multiple edits in one day don't create duplicate dates.
+
+The table has a "Δ vs" period selector (7 / 30 / 60 / 365 / 730 days, persisted to localStorage
+like the fee). For the selected period, each price cell (Raw / PSA 9 / PSA 10) shows a small
+colored delta beneath the value: the % change from the most recent history entry dated on or
+before `today - period` to the current price. If no history entry is that old yet, it shows "—".
+
+Because there's no live feed, meaningful change tracking depends on backfilling past prices, not
+just waiting for time to pass. The Edit-card modal has a "Price history" section (`+ Add price
+point`) where dated raw/psa9/psa10 entries can be added or removed manually — e.g. pulled from
+SportsCardsPro's own historical price chart for that card. This is the main way to get 30/60/365/730-day
+deltas populated before that much real time has elapsed.
+
 ## Data source & methodology
 All prices sourced from **SportsCardsPro** (sportscardspro.com), which
 aggregates completed eBay/marketplace sales through a proprietary,
@@ -57,6 +74,9 @@ so raw-vs-premium profit is directly comparable.
   Type (All/Base/Variant), editable grading-fee input (default $25).
 - Add/Edit modal for individual cards; "Reset to seed data" restores
   `SEED_CARDS` and wipes localStorage edits.
+- "Δ vs" period selector (7D/30D/60D/1Y/2Y) shows each price's % change under
+  Raw/PSA 9/PSA 10; per-card price history is editable in the Add/Edit modal
+  (see "Price history / change tracking" above).
 - Data persists in the visiting browser's localStorage — this is
   per-browser, not synced across devices, and not visible to me (Claude in
   chat) unless the user tells me what they changed.
